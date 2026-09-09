@@ -54,14 +54,16 @@ footer{padding:14px 18px;font-size:12px;opacity:.7}
     <label>2. Cor do texto</label>
     <div class="paleta" id="paleta"></div>
     <div class="linha"><label>Outra cor: <input type="color" id="corlivre" value="#FFFFFF"></label><span id="corhex" style="font-family:Consolas,monospace;font-size:12.5px">#FFFFFF</span></div>
-    <label>3. Ícone: clique num ícone da galeria abaixo</label>
+    <label>3. Ícones: clique nos ícones da galeria abaixo (pode escolher vários; a ordem é a do clique)</label>
     <div class="icone-sel" id="iconesel"><small>nenhum ícone escolhido (o texto sai sem ícone)</small></div>
     <div class="linha">
       <label>Alinhar <select id="alinha"><option value="center">centro</option><option value="left">esquerda</option><option value="right">direita</option></select></label>
       <label>Tamanho <select id="tam"><option value="">normal</option><option value="80">80%</option><option value="125">125%</option><option value="150">150%</option><option value="200">200%</option><option value="300">300%</option></select></label>
       <label><input type="checkbox" id="nobg"> ícone sem fundo</label>
-      <label><input type="checkbox" id="cadalinha"> ícone em cada linha</label>
+      <label><input type="checkbox" id="cadalinha"> um ícone por linha (1º ícone na 1ª linha, 2º na 2ª...)</label>
       <label><input type="checkbox" id="negrito"> negrito</label>
+      <label><input type="checkbox" id="italico"> itálico</label>
+      <label><input type="checkbox" id="sublinhado"> sublinhado</label>
     </div>
   </div>
   <div class="campo">
@@ -1904,7 +1906,7 @@ footer{padding:14px 18px;font-size:12px;opacity:.7}
 <script>
 const PALETA=[["#FFFFFF","branco"],["#000000","preto"],["#FFDF00","amarelo"],["#009C3B","verde"],["#00BFFF","azul claro"],["#1E3A8A","azul escuro"],["#FFA500","laranja"],["#E53935","vermelho"],["#FF69B4","rosa"],["#8E44AD","roxo"],["#8B4513","marrom"],["#BDBDBD","cinza"],["#D4AF37","dourado"],["#00E5A0","verde água"]];
 const $=id=>document.getElementById(id);
-let cor="#FFFFFF", icone=null;
+let cor="#FFFFFF", icones=[];
 const pal=$('paleta');
 for(const [hex,nome] of PALETA){const d=document.createElement('div');d.className='cor';d.style.background=hex;d.title=nome+' '+hex;d.dataset.hex=hex;d.onclick=()=>{cor=hex;$('corlivre').value=hex;marca();monta();};pal.appendChild(d);}
 function marca(){$('corhex').textContent=cor.toUpperCase();[...pal.children].forEach(c=>c.classList.toggle('sel',c.dataset.hex.toUpperCase()===cor.toUpperCase()));}
@@ -1912,25 +1914,36 @@ $('corlivre').oninput=e=>{cor=e.target.value.toUpperCase();marca();monta();};
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function monta(){
   const linhas=$('txt').value.split('\n'); const nobg=$('nobg').checked?' type="nobg"':' type=""';
-  const cada=$('cadalinha').checked, tam=$('tam').value, ali=$('alinha').value, neg=$('negrito').checked;
-  const ic=(t)=>icone?`<icon name="${icone}"${nobg}>${t}</icon>`:t;
+  const cada=$('cadalinha').checked, tam=$('tam').value, ali=$('alinha').value;
+  const neg=$('negrito').checked, ita=$('italico').checked, sub=$('sublinhado').checked;
+  // um icone abre a tag e o texto vai dentro; com varios, os anteriores ficam vazios e o ultimo leva o texto
+  const ic=(lista,t)=>lista.length?lista.slice(0,-1).map(n=>`<icon name="${n}"${nobg}></icon>`).join('')+`<icon name="${lista[lista.length-1]}"${nobg}>${t}</icon>`:t;
   let corpo;
-  if(cada) corpo=linhas.map(l=>ic(l)).join('\n');
-  else corpo=ic(linhas[0]||'')+(linhas.length>1?'\n'+linhas.slice(1).join('\n'):'');
+  if(cada) corpo=linhas.map((l,i)=>ic(icones[i]?[icones[i]]:[],l)).join('\n');
+  else corpo=ic(icones,linhas[0]||'')+(linhas.length>1?'\n'+linhas.slice(1).join('\n'):'');
   if(neg) corpo='<b>'+corpo+'</b>';
+  if(ita) corpo='<i>'+corpo+'</i>';
+  if(sub) corpo='<u>'+corpo+'</u>';
   if(tam) corpo=`<size=${tam}%>`+corpo+'</size>';
   corpo=`<color=${cor}>`+corpo+'</color>';
   corpo=`<align="${ali}">`+corpo+'</align>';
   $('cmd').value=corpo;
   // preview
-  const img=icone?`<img src="png/${icone}.png" class="${$('nobg').checked?'':'bg'}" alt="">`:'';
-  const pv=(cada?linhas.map(l=>img+esc(l)):[img+esc(linhas[0]||''),...linhas.slice(1).map(esc)]).join('<br>');
-  const p=$('preview'); p.innerHTML=pv||'&nbsp;'; p.style.textAlign=ali; p.style.color=cor; p.style.fontWeight=neg?'700':'400'; p.style.fontSize=(tam?22*tam/100:22)+'px';
+  const cls=$('nobg').checked?'':'bg';
+  const imgs=(lista)=>lista.map(n=>`<img src="png/${n}.png" class="${cls}" alt="">`).join('');
+  const pv=(cada?linhas.map((l,i)=>imgs(icones[i]?[icones[i]]:[])+esc(l)):[imgs(icones)+esc(linhas[0]||''),...linhas.slice(1).map(esc)]).join('<br>');
+  const p=$('preview'); p.innerHTML=pv||'&nbsp;'; p.style.textAlign=ali; p.style.color=cor; p.style.fontWeight=neg?'700':'400';
+  p.style.fontStyle=ita?'italic':'normal'; p.style.textDecoration=sub?'underline':'none'; p.style.fontSize=(tam?22*tam/100:22)+'px';
 }
-['txt','alinha','tam','nobg','cadalinha','negrito'].forEach(id=>{$(id).addEventListener('input',monta);$(id).addEventListener('change',monta);});
+['txt','alinha','tam','nobg','cadalinha','negrito','italico','sublinhado'].forEach(id=>{$(id).addEventListener('input',monta);$(id).addEventListener('change',monta);});
 $('copiar').onclick=()=>{navigator.clipboard.writeText($('cmd').value).then(()=>{$('ok').textContent='comando copiado; cole no texto da placa (tecla E na placa).';});};
-$('limpar').onclick=()=>{$('txt').value='';icone=null;$('iconesel').innerHTML='<small>nenhum ícone escolhido (o texto sai sem ícone)</small>';monta();};
-function escolhe(nome){icone=nome;$('iconesel').innerHTML=`<img src="png/${nome}.png" alt=""><span>${nome}</span> <button class="sec" id="tira" style="padding:3px 8px">tirar</button>`;$('tira').onclick=()=>{icone=null;$('iconesel').innerHTML='<small>nenhum ícone escolhido (o texto sai sem ícone)</small>';monta();};monta();}
+function mostraIcones(){const s=$('iconesel'); if(!icones.length){s.innerHTML='<small>nenhum ícone escolhido (o texto sai sem ícone)</small>';return;}
+  s.innerHTML=icones.map((n,i)=>`<span style="display:inline-flex;align-items:center;gap:6px;background:#3a2c20;border:1px solid #6b4c2a;border-radius:6px;padding:3px 6px"><img src="png/${n}.png" alt=""><span>${n}</span><button class="sec" data-i="${i}" style="padding:2px 7px">x</button></span>`).join(' ')
+    +` <button class="sec" id="tiratodos" style="padding:3px 8px">tirar todos</button>`;
+  s.querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>{icones.splice(+b.dataset.i,1);mostraIcones();monta();});
+  $('tiratodos').onclick=()=>{icones=[];mostraIcones();monta();};}
+$('limpar').onclick=()=>{$('txt').value='';icones=[];mostraIcones();monta();};
+function escolhe(nome){icones.push(nome);mostraIcones();monta();}
 const g=$('g'), f=$('f'), n=$('n'); const figs=[...g.children];
 function filtra(){const q=f.value.toLowerCase().trim(); let c=0; for(const el of figs){const ok=!q||el.dataset.n.includes(q); el.style.display=ok?'':'none'; if(ok)c++;} n.textContent=c+' de '+figs.length;}
 f.oninput=filtra; filtra(); marca(); monta();
