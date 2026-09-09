@@ -18,7 +18,9 @@ textarea{min-height:64px;resize:vertical}
 .paleta{display:flex;flex-wrap:wrap;gap:6px}
 .cor{width:28px;height:28px;border-radius:6px;border:2px solid transparent;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35)}
 .cor.sel{border-color:#fff;box-shadow:0 0 0 2px var(--ouro)}
-.icone-sel{display:flex;align-items:center;gap:10px;background:var(--escuro);border:1px solid var(--borda);border-radius:6px;padding:6px 10px;min-height:44px}
+.palavra{background:var(--escuro);border:1px solid var(--borda);border-radius:6px;padding:4px 9px;cursor:pointer;font-size:14px;font-weight:600}
+.palavra.sel{outline:2px solid var(--ouro)}
+.icone-sel{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--escuro);border:1px solid var(--borda);border-radius:6px;padding:6px 10px;min-height:44px}
 .icone-sel img{width:36px;height:36px;background:#c9a56b;border-radius:6px;padding:3px;box-sizing:content-box}
 .icone-sel small{opacity:.7}
 .preview{background:var(--placa);border:6px solid #4a3220;border-radius:8px;padding:18px;min-height:90px;font-size:22px;line-height:1.35;color:#3b2a1a;font-family:Georgia,serif;word-break:break-word;box-shadow:inset 0 0 30px rgba(0,0,0,.25)}
@@ -54,6 +56,8 @@ footer{padding:14px 18px;font-size:12px;opacity:.7}
     <label>2. Cor do texto</label>
     <div class="paleta" id="paleta"></div>
     <div class="linha"><label>Outra cor: <input type="color" id="corlivre" value="#FFFFFF"></label><span id="corhex" style="font-family:Consolas,monospace;font-size:12.5px">#FFFFFF</span></div>
+    <div class="linha"><label><input type="checkbox" id="porpalavra"> pintar palavra por palavra</label> <small id="dicapalavra" style="opacity:.7;display:none">clique numa palavra abaixo e depois numa cor da paleta; repita para cada palavra</small></div>
+    <div id="palavras" class="linha" style="display:none"></div>
     <label>3. Ícones: clique nos ícones da galeria abaixo (pode escolher vários; a ordem é a do clique)</label>
     <div class="icone-sel" id="iconesel"><small>nenhum ícone escolhido (o texto sai sem ícone)</small></div>
     <div class="linha">
@@ -1908,9 +1912,18 @@ const PALETA=[["#FFFFFF","branco"],["#000000","preto"],["#FFDF00","amarelo"],["#
 const $=id=>document.getElementById(id);
 let cor="#FFFFFF", icones=[];
 const pal=$('paleta');
-for(const [hex,nome] of PALETA){const d=document.createElement('div');d.className='cor';d.style.background=hex;d.title=nome+' '+hex;d.dataset.hex=hex;d.onclick=()=>{cor=hex;$('corlivre').value=hex;marca();monta();};pal.appendChild(d);}
+// cor por palavra: chave "linha:palavra" -> #HEX ; palavraSel = chave da palavra escolhida para receber a proxima cor
+let coresPalavra={}, palavraSel=null;
+function aplicaCor(hex){ if($('porpalavra').checked && palavraSel!==null){coresPalavra[palavraSel]=hex; palavras();} else {cor=hex;$('corlivre').value=hex;marca();} monta(); }
+for(const [hex,nome] of PALETA){const d=document.createElement('div');d.className='cor';d.style.background=hex;d.title=nome+' '+hex;d.dataset.hex=hex;d.onclick=()=>aplicaCor(hex);pal.appendChild(d);}
 function marca(){$('corhex').textContent=cor.toUpperCase();[...pal.children].forEach(c=>c.classList.toggle('sel',c.dataset.hex.toUpperCase()===cor.toUpperCase()));}
-$('corlivre').oninput=e=>{cor=e.target.value.toUpperCase();marca();monta();};
+$('corlivre').oninput=e=>aplicaCor(e.target.value.toUpperCase());
+function palavras(){ const box=$('palavras'); const on=$('porpalavra').checked; box.style.display=on?'':'none'; $('dicapalavra').style.display=on?'':'none'; if(!on) return;
+  box.innerHTML=''; $('txt').value.split('\n').forEach((l,li)=>{ l.split(/(\s+)/).forEach((w,wi)=>{ if(!w.trim()) return; const k=li+':'+wi; const s=document.createElement('span'); s.className='palavra'+(palavraSel===k?' sel':''); s.textContent=w; s.style.color=coresPalavra[k]||cor; s.onclick=()=>{palavraSel=k;palavras();}; box.appendChild(s); }); const br=document.createElement('span'); br.style.flexBasis='100%'; box.appendChild(br); });
+  const lim=document.createElement('button'); lim.className='sec'; lim.style.padding='3px 8px'; lim.textContent='limpar cores das palavras'; lim.onclick=()=>{coresPalavra={};palavraSel=null;palavras();monta();}; box.appendChild(lim); }
+$('porpalavra').addEventListener('change',()=>{palavras();monta();});
+function pinta(l,li){ if(!$('porpalavra').checked) return l; return l.split(/(\s+)/).map((w,wi)=>{const c=coresPalavra[li+':'+wi]; return (w.trim()&&c)?`<color=${c}>${w}</color>`:w;}).join(''); }
+function pintaHtml(l,li){ if(!$('porpalavra').checked) return esc(l); return l.split(/(\s+)/).map((w,wi)=>{const c=coresPalavra[li+':'+wi]; return (w.trim()&&c)?`<span style="color:${c}">${esc(w)}</span>`:esc(w);}).join(''); }
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function monta(){
   const linhas=$('txt').value.split('\n'); const nobg=$('nobg').checked?' type="nobg"':' type=""';
@@ -1918,9 +1931,10 @@ function monta(){
   const neg=$('negrito').checked, ita=$('italico').checked, sub=$('sublinhado').checked;
   // um icone abre a tag e o texto vai dentro; com varios, os anteriores ficam vazios e o ultimo leva o texto
   const ic=(lista,t)=>lista.length?lista.slice(0,-1).map(n=>`<icon name="${n}"${nobg}></icon>`).join('')+`<icon name="${lista[lista.length-1]}"${nobg}>${t}</icon>`:t;
+  const L=linhas.map((l,i)=>pinta(l,i));
   let corpo;
-  if(cada) corpo=linhas.map((l,i)=>ic(icones[i]?[icones[i]]:[],l)).join('\n');
-  else corpo=ic(icones,linhas[0]||'')+(linhas.length>1?'\n'+linhas.slice(1).join('\n'):'');
+  if(cada) corpo=L.map((l,i)=>ic(icones[i]?[icones[i]]:[],l)).join('\n');
+  else corpo=ic(icones,L[0]||'')+(L.length>1?'\n'+L.slice(1).join('\n'):'');
   if(neg) corpo='<b>'+corpo+'</b>';
   if(ita) corpo='<i>'+corpo+'</i>';
   if(sub) corpo='<u>'+corpo+'</u>';
@@ -1931,11 +1945,13 @@ function monta(){
   // preview
   const cls=$('nobg').checked?'':'bg';
   const imgs=(lista)=>lista.map(n=>`<img src="png/${n}.png" class="${cls}" alt="">`).join('');
-  const pv=(cada?linhas.map((l,i)=>imgs(icones[i]?[icones[i]]:[])+esc(l)):[imgs(icones)+esc(linhas[0]||''),...linhas.slice(1).map(esc)]).join('<br>');
+  const H=linhas.map((l,i)=>pintaHtml(l,i));
+  const pv=(cada?H.map((l,i)=>imgs(icones[i]?[icones[i]]:[])+l):[imgs(icones)+(H[0]||''),...H.slice(1)]).join('<br>');
   const p=$('preview'); p.innerHTML=pv||'&nbsp;'; p.style.textAlign=ali; p.style.color=cor; p.style.fontWeight=neg?'700':'400';
   p.style.fontStyle=ita?'italic':'normal'; p.style.textDecoration=sub?'underline':'none'; p.style.fontSize=(tam?22*tam/100:22)+'px';
 }
 ['txt','alinha','tam','nobg','cadalinha','negrito','italico','sublinhado'].forEach(id=>{$(id).addEventListener('input',monta);$(id).addEventListener('change',monta);});
+$('txt').addEventListener('input',palavras);
 $('copiar').onclick=()=>{navigator.clipboard.writeText($('cmd').value).then(()=>{$('ok').textContent='comando copiado; cole no texto da placa (tecla E na placa).';});};
 function mostraIcones(){const s=$('iconesel'); if(!icones.length){s.innerHTML='<small>nenhum ícone escolhido (o texto sai sem ícone)</small>';return;}
   s.innerHTML=icones.map((n,i)=>`<span style="display:inline-flex;align-items:center;gap:6px;background:#3a2c20;border:1px solid #6b4c2a;border-radius:6px;padding:3px 6px"><img src="png/${n}.png" alt=""><span>${n}</span><button class="sec" data-i="${i}" style="padding:2px 7px">x</button></span>`).join(' ')
