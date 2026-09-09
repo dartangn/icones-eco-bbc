@@ -58,13 +58,12 @@ footer{padding:14px 18px;font-size:12px;opacity:.7}
     <div class="linha"><label>Outra cor: <input type="color" id="corlivre" value="#FFFFFF"></label><span id="corhex" style="font-family:Consolas,monospace;font-size:12.5px">#FFFFFF</span></div>
     <div class="linha"><label><input type="checkbox" id="porpalavra"> pintar palavra por palavra</label> <small id="dicapalavra" style="opacity:.7;display:none">clique numa palavra abaixo e depois numa cor da paleta; repita para cada palavra</small></div>
     <div id="palavras" class="linha" style="display:none"></div>
-    <label>3. Ícones: clique nos ícones da galeria abaixo (pode escolher vários; a ordem é a do clique)</label>
+    <label>3. Ícones: clique nos ícones da galeria abaixo (pode escolher vários). Em cada um, escolha onde ele fica: antes do texto, depois do texto, ou numa linha só de ícones embaixo; e em qual linha.</label>
     <div class="icone-sel" id="iconesel"><small>nenhum ícone escolhido (o texto sai sem ícone)</small></div>
     <div class="linha">
       <label>Alinhar <select id="alinha"><option value="center">centro</option><option value="left">esquerda</option><option value="right">direita</option></select></label>
       <label>Tamanho <select id="tam"><option value="">normal</option><option value="80">80%</option><option value="125">125%</option><option value="150">150%</option><option value="200">200%</option><option value="300">300%</option></select></label>
       <label><input type="checkbox" id="nobg"> ícone sem fundo</label>
-      <label><input type="checkbox" id="cadalinha"> um ícone por linha (1º ícone na 1ª linha, 2º na 2ª...)</label>
       <label><input type="checkbox" id="negrito"> negrito</label>
       <label><input type="checkbox" id="italico"> itálico</label>
       <label><input type="checkbox" id="sublinhado"> sublinhado</label>
@@ -1927,14 +1926,15 @@ function pintaHtml(l,li){ if(!$('porpalavra').checked) return esc(l); return l.s
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function monta(){
   const linhas=$('txt').value.split('\n'); const nobg=$('nobg').checked?' type="nobg"':' type=""';
-  const cada=$('cadalinha').checked, tam=$('tam').value, ali=$('alinha').value;
+  const tam=$('tam').value, ali=$('alinha').value;
   const neg=$('negrito').checked, ita=$('italico').checked, sub=$('sublinhado').checked;
-  // um icone abre a tag e o texto vai dentro; com varios, os anteriores ficam vazios e o ultimo leva o texto
-  const ic=(lista,t)=>lista.length?lista.slice(0,-1).map(n=>`<icon name="${n}"${nobg}></icon>`).join('')+`<icon name="${lista[lista.length-1]}"${nobg}>${t}</icon>`:t;
+  const vazio=n=>`<icon name="${n}"${nobg}></icon>`;
+  // icones ANTES: o ultimo deles abre a tag e o texto vai dentro (forma provada em placa); os outros ficam vazios
+  const antes=(lista,t)=>lista.length?lista.slice(0,-1).map(vazio).join('')+`<icon name="${lista[lista.length-1]}"${nobg}>${t}</icon>`:t;
   const L=linhas.map((l,i)=>pinta(l,i));
-  let corpo;
-  if(cada) corpo=L.map((l,i)=>ic(icones[i]?[icones[i]]:[],l)).join('\n');
-  else corpo=ic(icones,L[0]||'')+(L.length>1?'\n'+L.slice(1).join('\n'):'');
+  const porLinha=L.map((t,i)=>antes(icones.filter(o=>o.pos==='antes'&&o.linha===i+1).map(o=>o.n),t)+icones.filter(o=>o.pos==='depois'&&o.linha===i+1).map(o=>vazio(o.n)).join(''));
+  const abaixo=icones.filter(o=>o.pos==='abaixo').map(o=>vazio(o.n)).join('');
+  let corpo=porLinha.join('\n')+(abaixo?'\n'+abaixo:'');
   if(neg) corpo='<b>'+corpo+'</b>';
   if(ita) corpo='<i>'+corpo+'</i>';
   if(sub) corpo='<u>'+corpo+'</u>';
@@ -1946,20 +1946,29 @@ function monta(){
   const cls=$('nobg').checked?'':'bg';
   const imgs=(lista)=>lista.map(n=>`<img src="png/${n}.png" class="${cls}" alt="">`).join('');
   const H=linhas.map((l,i)=>pintaHtml(l,i));
-  const pv=(cada?H.map((l,i)=>imgs(icones[i]?[icones[i]]:[])+l):[imgs(icones)+(H[0]||''),...H.slice(1)]).join('<br>');
+  const pvLinhas=H.map((t,i)=>imgs(icones.filter(o=>o.pos==='antes'&&o.linha===i+1).map(o=>o.n))+t+imgs(icones.filter(o=>o.pos==='depois'&&o.linha===i+1).map(o=>o.n)));
+  const pvAbaixo=imgs(icones.filter(o=>o.pos==='abaixo').map(o=>o.n));
+  const pv=pvLinhas.join('<br>')+(pvAbaixo?'<br>'+pvAbaixo:'');
   const p=$('preview'); p.innerHTML=pv||'&nbsp;'; p.style.textAlign=ali; p.style.color=cor; p.style.fontWeight=neg?'700':'400';
   p.style.fontStyle=ita?'italic':'normal'; p.style.textDecoration=sub?'underline':'none'; p.style.fontSize=(tam?22*tam/100:22)+'px';
 }
-['txt','alinha','tam','nobg','cadalinha','negrito','italico','sublinhado'].forEach(id=>{$(id).addEventListener('input',monta);$(id).addEventListener('change',monta);});
-$('txt').addEventListener('input',palavras);
+['txt','alinha','tam','nobg','negrito','italico','sublinhado'].forEach(id=>{$(id).addEventListener('input',monta);$(id).addEventListener('change',monta);});
+$('txt').addEventListener('input',()=>{palavras();mostraIcones();});
 $('copiar').onclick=()=>{navigator.clipboard.writeText($('cmd').value).then(()=>{$('ok').textContent='comando copiado; cole no texto da placa (tecla E na placa).';});};
 function mostraIcones(){const s=$('iconesel'); if(!icones.length){s.innerHTML='<small>nenhum ícone escolhido (o texto sai sem ícone)</small>';return;}
-  s.innerHTML=icones.map((n,i)=>`<span style="display:inline-flex;align-items:center;gap:6px;background:#3a2c20;border:1px solid #6b4c2a;border-radius:6px;padding:3px 6px"><img src="png/${n}.png" alt=""><span>${n}</span><button class="sec" data-i="${i}" style="padding:2px 7px">x</button></span>`).join(' ')
+  const nl=Math.max(1,$('txt').value.split('\n').length); icones.forEach(o=>{if(o.linha>nl)o.linha=nl;});
+  const optL=(o)=>Array.from({length:nl},(_,k)=>`<option value="${k+1}"${o.linha===k+1?' selected':''}>linha ${k+1}</option>`).join('');
+  s.innerHTML=icones.map((o,i)=>`<span style="display:inline-flex;align-items:center;gap:6px;background:#3a2c20;border:1px solid #6b4c2a;border-radius:6px;padding:3px 6px"><img src="png/${o.n}.png" alt=""><span>${o.n}</span>
+    <select data-pos="${i}" style="padding:3px 6px"><option value="antes"${o.pos==='antes'?' selected':''}>antes do texto</option><option value="depois"${o.pos==='depois'?' selected':''}>depois do texto</option><option value="abaixo"${o.pos==='abaixo'?' selected':''}>linha de ícones embaixo</option></select>
+    <select data-lin="${i}" style="padding:3px 6px"${o.pos==='abaixo'?' disabled':''}>${optL(o)}</select>
+    <button class="sec" data-i="${i}" style="padding:2px 7px">x</button></span>`).join(' ')
     +` <button class="sec" id="tiratodos" style="padding:3px 8px">tirar todos</button>`;
   s.querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>{icones.splice(+b.dataset.i,1);mostraIcones();monta();});
+  s.querySelectorAll('select[data-pos]').forEach(x=>x.onchange=()=>{icones[+x.dataset.pos].pos=x.value;mostraIcones();monta();});
+  s.querySelectorAll('select[data-lin]').forEach(x=>x.onchange=()=>{icones[+x.dataset.lin].linha=+x.value;monta();});
   $('tiratodos').onclick=()=>{icones=[];mostraIcones();monta();};}
-$('limpar').onclick=()=>{$('txt').value='';icones=[];mostraIcones();monta();};
-function escolhe(nome){icones.push(nome);mostraIcones();monta();}
+$('limpar').onclick=()=>{$('txt').value='';icones=[];coresPalavra={};palavraSel=null;palavras();mostraIcones();monta();};
+function escolhe(nome){icones.push({n:nome,pos:'antes',linha:1});mostraIcones();monta();}
 const g=$('g'), f=$('f'), n=$('n'); const figs=[...g.children];
 function filtra(){const q=f.value.toLowerCase().trim(); let c=0; for(const el of figs){const ok=!q||el.dataset.n.includes(q); el.style.display=ok?'':'none'; if(ok)c++;} n.textContent=c+' de '+figs.length;}
 f.oninput=filtra; filtra(); marca(); monta();
