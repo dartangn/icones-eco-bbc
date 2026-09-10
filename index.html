@@ -20,7 +20,9 @@ textarea{min-height:80px;resize:vertical}
 .paleta{display:flex;flex-wrap:wrap;gap:6px}
 .cor{width:34px;height:34px;border-radius:6px;border:2px solid transparent;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35)}
 .cor.sel{border-color:#fff;box-shadow:0 0 0 2px var(--ouro)}
-.palavra{background:var(--escuro);border:1px solid var(--borda);border-radius:6px;padding:6px 11px;cursor:pointer;font-size:16px;font-weight:600}
+/* a ficha de cada palavra usa o MESMO fundo da placa e a borda na cor da palavra: antes o fundo era
+   escuro e a borda marrom fixa, o que fazia cor clara e cor preta parecerem erradas (Raul, 10/09) */
+.palavra{background:var(--placa);border:2px solid #4a3220;border-radius:6px;padding:6px 11px;cursor:pointer;font-size:16px;font-weight:600}
 .palavra.sel{outline:2px solid var(--ouro)}
 .icone-sel{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--escuro);border:1px solid var(--borda);border-radius:6px;padding:8px 12px;min-height:50px;font-size:15px}
 .icone-sel img{width:40px;height:40px;background:#c9a56b;border-radius:6px;padding:3px;box-sizing:content-box}
@@ -69,6 +71,12 @@ footer{padding:16px 22px;font-size:14.5px;opacity:.8}
       <label><input type="checkbox" id="negrito"> negrito</label>
       <label><input type="checkbox" id="italico"> itálico</label>
       <label><input type="checkbox" id="sublinhado"> sublinhado</label>
+    </div>
+    <div class="linha" style="border-top:1px solid var(--borda);padding-top:10px">
+      <label><input type="checkbox" id="realce"> realce atrás da letra</label>
+      <label>cor do realce <input type="color" id="correalce" value="#000000" style="width:52px;height:30px;padding:2px"></label>
+      <label>força <select id="alfarealce"><option value="80">50%</option><option value="BF" selected>75%</option><option value="FF">100%</option></select></label>
+      <small style="opacity:.8;flex-basis:100%">O texto da placa <b>não tem contorno de letra</b>: essa tag não existe no jogo (conferido no binário do servidor, que só conhece color, size, b, i, u, s, align, nobr, line-height, voffset, mark e mspace). O que existe é este <b>realce</b>, um retângulo colorido atrás das letras — resolve o mesmo problema de leitura. <b>Ainda não testado numa placa de verdade;</b> se não funcionar, desmarque.</small>
     </div>
   </div>
   <div class="campo">
@@ -1920,7 +1928,7 @@ for(const [hex,nome] of PALETA){const d=document.createElement('div');d.classNam
 function marca(){$('corhex').textContent=cor.toUpperCase();[...pal.children].forEach(c=>c.classList.toggle('sel',c.dataset.hex.toUpperCase()===cor.toUpperCase()));}
 $('corlivre').oninput=e=>aplicaCor(e.target.value.toUpperCase());
 function palavras(){ const box=$('palavras'); const on=$('porpalavra').checked; box.style.display=on?'':'none'; $('dicapalavra').style.display=on?'':'none'; if(!on) return;
-  box.innerHTML=''; $('txt').value.split('\n').forEach((l,li)=>{ l.split(/(\s+)/).forEach((w,wi)=>{ if(!w.trim()) return; const k=li+':'+wi; const s=document.createElement('span'); s.className='palavra'+(palavraSel===k?' sel':''); s.textContent=w; s.style.color=coresPalavra[k]||cor; s.onclick=()=>{palavraSel=k;palavras();}; box.appendChild(s); }); const br=document.createElement('span'); br.style.flexBasis='100%'; box.appendChild(br); });
+  box.innerHTML=''; $('txt').value.split('\n').forEach((l,li)=>{ l.split(/(\s+)/).forEach((w,wi)=>{ if(!w.trim()) return; const k=li+':'+wi; const s=document.createElement('span'); s.className='palavra'+(palavraSel===k?' sel':''); s.textContent=w; const cw=coresPalavra[k]||cor; s.style.color=cw; s.style.borderColor=cw; s.onclick=()=>{palavraSel=k;palavras();}; box.appendChild(s); }); const br=document.createElement('span'); br.style.flexBasis='100%'; box.appendChild(br); });
   const lim=document.createElement('button'); lim.className='sec'; lim.style.padding='3px 8px'; lim.textContent='limpar cores das palavras'; lim.onclick=()=>{coresPalavra={};palavraSel=null;palavras();monta();}; box.appendChild(lim); }
 $('porpalavra').addEventListener('change',()=>{palavras();monta();});
 function pinta(l,li){ if(!$('porpalavra').checked) return l; return l.split(/(\s+)/).map((w,wi)=>{const c=coresPalavra[li+':'+wi]; return (w.trim()&&c)?`<color=${c}>${w}</color>`:w;}).join(''); }
@@ -1942,6 +1950,9 @@ function monta(){
   if(sub) corpo='<u>'+corpo+'</u>';
   if(tam) corpo=`<size=${tam}%>`+corpo+'</size>';
   corpo=`<color=${cor}>`+corpo+'</color>';
+  // realce: <mark=#RRGGBBAA> ... </mark>. A tag existe no binario do servidor ("<mark="); nao existe
+  // tag de contorno de letra. O alfa vai junto no hex, que e como o TextMeshPro do jogo espera.
+  if($('realce').checked) corpo=`<mark=${$('correalce').value.toUpperCase()}${$('alfarealce').value}>`+corpo+'</mark>';
   corpo=`<align="${ali}">`+corpo+'</align>';
   $('cmd').value=corpo;
   // preview
@@ -1952,11 +1963,40 @@ function monta(){
   const pvAbaixo=imgs(icones.filter(o=>o.pos==='abaixo').map(o=>o.n));
   const pv=pvLinhas.join('<br>')+(pvAbaixo?'<br>'+pvAbaixo:'');
   const p=$('preview'); p.innerHTML=pv||'&nbsp;'; p.style.textAlign=ali; p.style.color=cor; p.style.fontWeight=neg?'700':'400';
+  // desenha o realce na previa com a mesma cor e a mesma opacidade que vao no comando
+  if($('realce').checked){ const a=({'80':0.5,'BF':0.75,'FF':1})[$('alfarealce').value]||0.75;
+    const h=$('correalce').value.replace('#',''); const r=parseInt(h.slice(0,2),16), g2=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+    p.style.background=`rgba(${r},${g2},${b},${a})`; } else p.style.background='';
   p.style.fontStyle=ita?'italic':'normal'; p.style.textDecoration=sub?'underline':'none'; p.style.fontSize=(tam?22*tam/100:22)+'px';
 }
-['txt','alinha','tam','nobg','negrito','italico','sublinhado'].forEach(id=>{$(id).addEventListener('input',monta);$(id).addEventListener('change',monta);});
+['txt','alinha','tam','nobg','negrito','italico','sublinhado','realce','correalce','alfarealce'].forEach(id=>{$(id).addEventListener('input',monta);$(id).addEventListener('change',monta);});
 $('txt').addEventListener('input',()=>{palavras();mostraIcones();});
-$('copiar').onclick=()=>{navigator.clipboard.writeText($('cmd').value).then(()=>{$('ok').textContent='comando copiado; cole no texto da placa (tecla E na placa).';});};
+/* COPIAR -- por que nao e so navigator.clipboard: essa API so existe em pagina SEGURA (https ou
+   localhost). Dentro do painel do servidor a pagina e http://186.215.73.175:27041/placas/, entao
+   navigator.clipboard vem UNDEFINED, a linha estourava e o botao nao fazia nada nem avisava
+   (defeito relatado pelo Raul em 10/09). Agora: tenta a API, cai para o execCommand antigo, que
+   funciona em http, e se nem isso der, seleciona o texto e pede Ctrl+C. Sempre avisa. */
+function copia(t,msg){
+  const aviso=m=>{ if($('ok')) $('ok').textContent=m; };
+  /* O plano B copia de um campo VISIVEL (o Chrome recusa copiar de elemento fora da tela). Fica
+     dentro da janela, com 2em e opacidade 0, que e a forma que funciona em http. */
+  const antigo=()=>{ const ta=document.createElement('textarea'); ta.value=t;
+    ta.style.cssText='position:fixed;left:0;top:0;width:2em;height:2em;padding:0;border:none;outline:none;box-shadow:none;background:transparent;opacity:0';
+    document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0,t.length);
+    let ok=false; try{ ok=document.execCommand('copy'); }catch(e){ ok=false; }
+    document.body.removeChild(ta); return ok; };
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(()=>aviso(msg)).catch(()=>{
+        aviso(antigo()?msg:'nao consegui copiar sozinho; o texto esta selecionado, aperte Ctrl+C');
+        if(!navigator.clipboard) return; });
+      return;
+    }
+  }catch(e){}
+  if(antigo()) aviso(msg);
+  else { const c=$('cmd'); if(c){ c.focus(); c.select(); } aviso('nao consegui copiar sozinho; o texto esta selecionado, aperte Ctrl+C'); }
+}
+$('copiar').onclick=()=>copia($('cmd').value,'comando copiado; cole no texto da placa (tecla E na placa).');
 function mostraIcones(){const s=$('iconesel'); if(!icones.length){s.innerHTML='<small>nenhum ícone escolhido (o texto sai sem ícone)</small>';return;}
   const nl=Math.max(1,$('txt').value.split('\n').length); icones.forEach(o=>{if(o.linha>nl)o.linha=nl;});
   const optL=(o)=>Array.from({length:nl},(_,k)=>`<option value="${k+1}"${o.linha===k+1?' selected':''}>linha ${k+1}</option>`).join('');
@@ -1975,6 +2015,6 @@ const g=$('g'), f=$('f'), n=$('n'); const figs=[...g.children];
 function filtra(){const q=f.value.toLowerCase().trim(); let c=0; for(const el of figs){const ok=!q||el.dataset.n.includes(q); el.style.display=ok?'':'none'; if(ok)c++;} n.textContent=c+' de '+figs.length;}
 f.oninput=filtra; filtra(); marca(); monta();
 g.onclick=e=>{const fig=e.target.closest('figure'); if(!fig)return; const nome=fig.querySelector('figcaption').textContent;
-  const tag='<icon name="'+nome+'" type=""></icon>'; if(navigator.clipboard) navigator.clipboard.writeText(tag);
+  const tag='<icon name="'+nome+'" type=""></icon>'; copia(tag,'ícone copiado: '+tag);
   figs.forEach(x=>x.classList.remove('copiado')); fig.classList.add('copiado'); n.textContent='copiado: '+tag; escolhe(nome); window.scrollTo({top:0,behavior:'smooth'});};
 </script></body></html>
