@@ -1,7 +1,7 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Ícones do Eco para placas · BBC-Brasil</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-:root{--fundo:#2b2118;--painel:#3a2c20;--escuro:#241b13;--borda:#6b4c2a;--ouro:#e8c47a;--texto:#e9dcc4;--placa:#7a5233}
+:root{--fundo:#2b2118;--painel:#3a2c20;--escuro:#241b13;--borda:#6b4c2a;--ouro:#e8c47a;--texto:#e9dcc4;--placa:#7a5233;--halo:#d4962b}
 html{font-size:17px}
 body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:var(--fundo);color:var(--texto);font-size:1rem}
 .creditos{background:var(--escuro);padding:12px 22px;font-size:15px;line-height:1.55;border-bottom:1px solid var(--borda)}
@@ -30,6 +30,11 @@ textarea{min-height:80px;resize:vertical}
 .preview{background:var(--placa);border:6px solid #4a3220;border-radius:8px;padding:22px;min-height:110px;font-size:26px;line-height:1.35;color:#3b2a1a;font-family:Georgia,serif;word-break:break-word;box-shadow:inset 0 0 30px rgba(0,0,0,.25)}
 .preview img{height:1.2em;vertical-align:-0.25em;margin-right:.15em;border-radius:4px}
 .preview img.bg{background:#c9a56b;padding:2px;box-sizing:content-box}
+/* HALO DOURADO -- a placa do jogo desenha um halo quente em volta de cada letra. Ele vem do material
+   do texto no cliente (TextMeshPro), nao do comando: nao existe tag de contorno. Medido em campo em
+   10/09/2026: letra preta ganha halo dourado forte, letra branca ganha halo palido, letra ambar quase
+   nao mostra halo. A previa imita isso para nao mentir sobre a cor escolhida. */
+.comhalo{text-shadow:0 0 2px var(--halo),1px 0 1px var(--halo),-1px 0 1px var(--halo),0 1px 1px var(--halo),0 -1px 1px var(--halo),1px 1px 1px var(--halo),-1px -1px 1px var(--halo)}
 .saida{display:flex;gap:8px;align-items:stretch}
 .saida textarea{flex:1;min-height:90px;font-family:Consolas,monospace;font-size:14.5px;line-height:1.4}
 button{background:var(--ouro);color:#2b2118;border:0;border-radius:6px;padding:10px 18px;font-weight:700;cursor:pointer;font-size:16px}
@@ -73,10 +78,24 @@ footer{padding:16px 22px;font-size:14.5px;opacity:.8}
       <label><input type="checkbox" id="sublinhado"> sublinhado</label>
     </div>
     <div class="linha" style="border-top:1px solid var(--borda);padding-top:10px">
+      <label><input type="checkbox" id="halo" checked> prévia com o halo dourado da placa</label>
       <label><input type="checkbox" id="realce"> realce atrás da letra</label>
       <label>cor do realce <input type="color" id="correalce" value="#000000" style="width:52px;height:30px;padding:2px"></label>
       <label>força <select id="alfarealce"><option value="80">50%</option><option value="BF" selected>75%</option><option value="FF">100%</option></select></label>
-      <small style="opacity:.8;flex-basis:100%">O texto da placa <b>não tem contorno de letra</b>: essa tag não existe no jogo (conferido no binário do servidor, que só conhece color, size, b, i, u, s, align, nobr, line-height, voffset, mark e mspace). O que existe é este <b>realce</b>, um retângulo colorido atrás das letras — resolve o mesmo problema de leitura. <b>Ainda não testado numa placa de verdade;</b> se não funcionar, desmarque.</small>
+      <small style="opacity:.8;flex-basis:100%">
+      <b>O halo dourado em volta da letra não sai, e não é você que o põe.</b> Ele vem do material do texto
+      na placa, dentro do jogo — o comando não tem tag de contorno para ligar, desligar ou pintar
+      (o texto da placa é TextMeshPro, e o TextMeshPro simplesmente não tem essa tag).
+      Testado na placa em 10/09/2026: <b>letra preta</b> ganha halo dourado forte, <b>letra branca</b>
+      ganha halo pálido, e <b>letra âmbar quase não mostra halo</b> — é por isso que existe a cor
+      <b>âmbar</b> no fim da paleta: é a que deixa a palavra lisa, de uma cor só.
+      A prévia acima já desenha o halo, para a cor que você vê aqui ser a cor que vai aparecer na placa.
+      <br><b>Maiúsculas:</b> a placa grande de madeira escreve tudo em maiúscula, e não há como evitar —
+      o <code>&lt;lowercase&gt;</code> foi testado e a placa ignorou. Placa pequena escreve normal:
+      <b>depende do modelo da placa</b>.
+      <br>O <b>realce</b> é um retângulo colorido atrás das letras (tag <code>&lt;mark&gt;</code>), e é o
+      caminho para destacar sem depender do halo. <b>Ainda não testado numa placa de verdade;</b>
+      se não funcionar, desmarque.</small>
     </div>
   </div>
   <div class="campo">
@@ -1917,7 +1936,7 @@ footer{padding:16px 22px;font-size:14.5px;opacity:.8}
 <figure data-n="zoningofficeitem"><img src="png/ZoningOfficeItem.png" loading="lazy" alt=""><figcaption>ZoningOfficeItem</figcaption></figure></main>
 <footer>Tags do próprio jogo: &lt;align&gt;, &lt;color&gt;, &lt;size&gt;, &lt;b&gt; e &lt;icon&gt; (com fundo ou <code>type="nobg"</code>). O ícone funciona em qualquer placa com texto, inclusive em veículos.</footer>
 <script>
-const PALETA=[["#FFFFFF","branco"],["#000000","preto"],["#FFDF00","amarelo"],["#009C3B","verde"],["#00BFFF","azul claro"],["#1E3A8A","azul escuro"],["#FFA500","laranja"],["#E53935","vermelho"],["#FF69B4","rosa"],["#8E44AD","roxo"],["#8B4513","marrom"],["#BDBDBD","cinza"],["#D4AF37","dourado"],["#00E5A0","verde água"]];
+const PALETA=[["#FFFFFF","branco"],["#000000","preto"],["#FFDF00","amarelo"],["#009C3B","verde"],["#00BFFF","azul claro"],["#1E3A8A","azul escuro"],["#FFA500","laranja"],["#E53935","vermelho"],["#FF69B4","rosa"],["#8E44AD","roxo"],["#8B4513","marrom"],["#BDBDBD","cinza"],["#D4AF37","dourado"],["#00E5A0","verde água"],["#D98C00","âmbar: letra sem halo"]];
 const $=id=>document.getElementById(id);
 let cor="#FFFFFF", icones=[];
 const pal=$('paleta');
@@ -1928,7 +1947,7 @@ for(const [hex,nome] of PALETA){const d=document.createElement('div');d.classNam
 function marca(){$('corhex').textContent=cor.toUpperCase();[...pal.children].forEach(c=>c.classList.toggle('sel',c.dataset.hex.toUpperCase()===cor.toUpperCase()));}
 $('corlivre').oninput=e=>aplicaCor(e.target.value.toUpperCase());
 function palavras(){ const box=$('palavras'); const on=$('porpalavra').checked; box.style.display=on?'':'none'; $('dicapalavra').style.display=on?'':'none'; if(!on) return;
-  box.innerHTML=''; $('txt').value.split('\n').forEach((l,li)=>{ l.split(/(\s+)/).forEach((w,wi)=>{ if(!w.trim()) return; const k=li+':'+wi; const s=document.createElement('span'); s.className='palavra'+(palavraSel===k?' sel':''); s.textContent=w; const cw=coresPalavra[k]||cor; s.style.color=cw; s.style.borderColor=cw; s.onclick=()=>{palavraSel=k;palavras();}; box.appendChild(s); }); const br=document.createElement('span'); br.style.flexBasis='100%'; box.appendChild(br); });
+  box.innerHTML=''; $('txt').value.split('\n').forEach((l,li)=>{ l.split(/(\s+)/).forEach((w,wi)=>{ if(!w.trim()) return; const k=li+':'+wi; const s=document.createElement('span'); s.className='palavra'+(palavraSel===k?' sel':'')+($('halo').checked?' comhalo':''); s.textContent=w; const cw=coresPalavra[k]||cor; s.style.color=cw; s.style.borderColor=cw; s.onclick=()=>{palavraSel=k;palavras();}; box.appendChild(s); }); const br=document.createElement('span'); br.style.flexBasis='100%'; box.appendChild(br); });
   const lim=document.createElement('button'); lim.className='sec'; lim.style.padding='3px 8px'; lim.textContent='limpar cores das palavras'; lim.onclick=()=>{coresPalavra={};palavraSel=null;palavras();monta();}; box.appendChild(lim); }
 $('porpalavra').addEventListener('change',()=>{palavras();monta();});
 function pinta(l,li){ if(!$('porpalavra').checked) return l; return l.split(/(\s+)/).map((w,wi)=>{const c=coresPalavra[li+':'+wi]; return (w.trim()&&c)?`<color=${c}>${w}</color>`:w;}).join(''); }
@@ -1963,13 +1982,15 @@ function monta(){
   const pvAbaixo=imgs(icones.filter(o=>o.pos==='abaixo').map(o=>o.n));
   const pv=pvLinhas.join('<br>')+(pvAbaixo?'<br>'+pvAbaixo:'');
   const p=$('preview'); p.innerHTML=pv||'&nbsp;'; p.style.textAlign=ali; p.style.color=cor; p.style.fontWeight=neg?'700':'400';
+  p.classList.toggle('comhalo',$('halo').checked);
   // desenha o realce na previa com a mesma cor e a mesma opacidade que vao no comando
   if($('realce').checked){ const a=({'80':0.5,'BF':0.75,'FF':1})[$('alfarealce').value]||0.75;
     const h=$('correalce').value.replace('#',''); const r=parseInt(h.slice(0,2),16), g2=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
     p.style.background=`rgba(${r},${g2},${b},${a})`; } else p.style.background='';
   p.style.fontStyle=ita?'italic':'normal'; p.style.textDecoration=sub?'underline':'none'; p.style.fontSize=(tam?22*tam/100:22)+'px';
 }
-['txt','alinha','tam','nobg','negrito','italico','sublinhado','realce','correalce','alfarealce'].forEach(id=>{$(id).addEventListener('input',monta);$(id).addEventListener('change',monta);});
+['txt','alinha','tam','nobg','negrito','italico','sublinhado','halo','realce','correalce','alfarealce'].forEach(id=>{$(id).addEventListener('input',monta);$(id).addEventListener('change',monta);});
+$('halo').addEventListener('change',palavras);   // as fichas de palavra tambem ganham/perdem o halo
 $('txt').addEventListener('input',()=>{palavras();mostraIcones();});
 /* COPIAR -- por que nao e so navigator.clipboard: essa API so existe em pagina SEGURA (https ou
    localhost). Dentro do painel do servidor a pagina e http://186.215.73.175:27041/placas/, entao
