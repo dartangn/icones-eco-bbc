@@ -9,7 +9,7 @@ body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:var(--fundo);co
 /* montador */
 .montador{background:var(--painel);border-bottom:1px solid var(--borda);padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:16px 32px}
 @media (max-width:900px){.montador{grid-template-columns:1fr}}
-.montador h2{grid-column:1/-1;margin:0;font-size:19px;color:var(--ouro);letter-spacing:.06em;text-transform:uppercase}
+.montador h2{grid-column:1/-1;margin:0;font-size:19px;color:var(--ouro);letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:12px}
 .campo{display:flex;flex-direction:column;gap:8px;font-size:16px}
 .campo label{opacity:.85}
 textarea,input[type=text],select{background:var(--escuro);color:#f3e6c9;border:1px solid var(--borda);border-radius:6px;padding:10px 12px;font-size:16px;font-family:inherit}
@@ -96,10 +96,24 @@ footer{padding:16px 22px;font-size:14.5px;opacity:.8}
    um arquivo so nunca fica com metade traduzida, e a bandeira troca na hora. */
 body:not(.en) .en{display:none}
 body.en .pt{display:none}
-#lingua{display:flex;gap:4px;margin-left:auto}
-#lingua button{font-size:19px;line-height:1;padding:3px 8px;background:var(--escuro);
-  border:2px solid transparent;border-radius:6px;cursor:pointer}
-#lingua button.on{border-color:var(--ouro);background:var(--painel)}
+/* BANDEIRAS EM SVG, nao emoji. O Windows nao desenha emoji de bandeira (os pares de
+   indicador regional): 🇧🇷 saia como dois retangulos vazios no navegador do Raul.
+   SVG embutido sempre desenha, em qualquer sistema, e fica nitido em qualquer tamanho.
+   A sigla vai POR CIMA da bandeira, com sombra, porque bandeira pequena sozinha nao
+   diz qual idioma e -- a palavra diz. */
+#lingua{display:flex;gap:6px;margin-left:auto}
+#lingua button{position:relative;width:66px;height:34px;padding:0;cursor:pointer;
+  border:2px solid #00000055;border-radius:5px;overflow:hidden;
+  background-size:cover;background-position:center;
+  font:700 12px/1 var(--fonte,"Segoe UI"),Arial,sans-serif;letter-spacing:.04em;
+  color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000;filter:saturate(.75) brightness(.8)}
+#lingua button:hover{filter:none}
+#lingua button.on{border-color:var(--ouro);filter:none;box-shadow:0 0 0 1px #00000066}
+#lingua button span{position:relative;z-index:1}
+#lingua button::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.28)}
+#lingua button span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
+#lpt{background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 98"><rect width="140" height="98" fill="%23009C3B"/><path d="M70 9 131 49 70 89 9 49Z" fill="%23FFDF00"/><circle cx="70" cy="49" r="22" fill="%23002776"/></svg>')}
+#len{background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30"><rect width="60" height="30" fill="%23012169"/><path d="M0 0 60 30M60 0 0 30" stroke="%23fff" stroke-width="6"/><path d="M0 0 60 30M60 0 0 30" stroke="%23C8102E" stroke-width="4"/><path d="M30 0V30M0 15H60" stroke="%23fff" stroke-width="10"/><path d="M30 0V30M0 15H60" stroke="%23C8102E" stroke-width="6"/></svg>')}
 </style></head><body>
 <div class="creditos"><span class="pt"><b>Ícones do jogo Eco, © Strange Loop Games.</b> Os ícones dos mods são dos seus autores no mod.io: Market Mod e Gates (bushusuper / EcoPulse), Hot Wheels (zangdar1111 / CavRn), IceCream (Orflash-EcoSim, arte de PookieNoodlin), Mixology 14.0.3 (HolyTiti), StorageMore (Plex_). Imagens extraídas do mod Calculator &amp; Alert Price GP, o GoodPrice (Orflash-EcoSim). Galeria sem fins comerciais, para os jogadores do servidor BBC-Brasil usarem nas placas do jogo.</span>
 <span class="en"><b>Eco game icons, © Strange Loop Games.</b> Mod icons belong to their authors on mod.io:
@@ -109,7 +123,7 @@ Calculator &amp; Alert Price GP, aka GoodPrice (Orflash-EcoSim). A non-commercia
 of the BBC-Brasil server to use on in-game signs.</span></div>
 
 <section class="montador">
-  <h2><span class="pt">Montar texto da placa</span><span class="en">Build your sign text</span></h2>
+  <h2><span class="pt">Montar texto da placa</span><span class="en">Build your sign text</span><div id="lingua"><button id="lpt" class="on" title="Português do Brasil"><span>PT-BR</span></button><button id="len" title="English"><span>EN</span></button></div></h2>
   <div class="campo">
     <label for="txt"><span class="pt">1. O que escrever (uma linha por linha da placa; pode deixar vazio para só o ícone)</span><span class="en">1. What to write (one line per sign line; leave empty for icons only)</span></label>
     <textarea id="txt" placeholder="Ex.: Carpintaria&#10;Lenhador"></textarea>
@@ -184,42 +198,42 @@ of the BBC-Brasil server to use on in-game signs.</span></div>
 <header><h1>BBC-Brasil · <span class="pt">Ícones para placa</span><span class="en">Sign icons</span> (1824)</h1><input id="f" placeholder="filtrar pelo nome (ex.: Store, Market, Sign, Log, Bar)..." autofocus>
 <span id="n"></span><label style="font-size:13px"><input type="checkbox" id="porCat" checked> <span class="pt">por categoria</span><span class="en">by category</span></label>
 <code><span class="pt">clique no ícone = escolhe para o montador e copia a tag</span><span class="en">click an icon = adds it to the builder and copies the tag</span></code>
-<div id="lingua"><button id="lpt" class="on" title="Português">🇧🇷</button><button id="len" title="English">🇺🇸</button></div></header>
+</header>
 <div id="volta"><button class="sec" id="btVolta">&#8592; <span class="pt">todas as categorias</span><span class="en">all categories</span></button><b id="catAtual"></b></div>
-<div id="cats"><button class="catcard" data-cat="Móveis e decoração"><img src="png/KiteItem.png" loading="lazy" alt=""><span class="cnome">Móveis e decoração</span><span class="cqtd">385</span></button>
-<button class="catcard" data-cat="Comida"><img src="png/CampfireStewItem.png" loading="lazy" alt=""><span class="cnome">Comida</span><span class="cqtd">187</span></button>
-<button class="catcard" data-cat="Placas e letreiros"><img src="png/LargeStandingSpruceSignItem.png" loading="lazy" alt=""><span class="cnome">Placas e letreiros</span><span class="cqtd">137</span></button>
-<button class="catcard" data-cat="Diversos"><img src="png/MediumMetalShipFrameItem.png" loading="lazy" alt=""><span class="cnome">Diversos</span><span class="cqtd">128</span></button>
-<button class="catcard" data-cat="Outros objetos"><img src="png/HewnDoorItem.png" loading="lazy" alt=""><span class="cnome">Outros objetos</span><span class="cqtd">109</span></button>
-<button class="catcard" data-cat="Grupos de item"><img src="png/BlockGroup.png" loading="lazy" alt=""><span class="cnome">Grupos de item</span><span class="cqtd">94</span></button>
-<button class="catcard" data-cat="Roupas"><img src="png/WorkBootsItem.png" loading="lazy" alt=""><span class="cnome">Roupas</span><span class="cqtd">88</span></button>
-<button class="catcard" data-cat="Melhorias"><img src="png/BasicUpgradeItem.png" loading="lazy" alt=""><span class="cnome">Melhorias</span><span class="cqtd">62</span></button>
-<button class="catcard" data-cat="Mesas de fabricação"><img src="png/CarpentryTableItem.png" loading="lazy" alt=""><span class="cnome">Mesas de fabricação</span><span class="cqtd">62</span></button>
-<button class="catcard" data-cat="Ferramentas"><img src="png/IronHammerItem.png" loading="lazy" alt=""><span class="cnome">Ferramentas</span><span class="cqtd">61</span></button>
-<button class="catcard" data-cat="Sementes"><img src="png/CornSeedItem.png" loading="lazy" alt=""><span class="cnome">Sementes</span><span class="cqtd">59</span></button>
-<button class="catcard" data-cat="Armazenamento"><img src="png/Petite_Double_EtagereItem.png" loading="lazy" alt=""><span class="cnome">Armazenamento</span><span class="cqtd">51</span></button>
-<button class="catcard" data-cat="Peças"><img src="png/IronGearItem.png" loading="lazy" alt=""><span class="cnome">Peças</span><span class="cqtd">45</span></button>
-<button class="catcard" data-cat="Terra e rocha"><img src="png/StoneItem.png" loading="lazy" alt=""><span class="cnome">Terra e rocha</span><span class="cqtd">42</span></button>
-<button class="catcard" data-cat="Profissões"><img src="png/CarpentrySkillItem.png" loading="lazy" alt=""><span class="cnome">Profissões</span><span class="cqtd">36</span></button>
-<button class="catcard" data-cat="Blocos e construção"><img src="png/MortaredStoneItem.png" loading="lazy" alt=""><span class="cnome">Blocos e construção</span><span class="cqtd">35</span></button>
-<button class="catcard" data-cat="Plantação"><img src="png/CornItem.png" loading="lazy" alt=""><span class="cnome">Plantação</span><span class="cqtd">34</span></button>
-<button class="catcard" data-cat="Combustível"><img src="png/CoalItem.png" loading="lazy" alt=""><span class="cnome">Combustível</span><span class="cqtd">31</span></button>
-<button class="catcard" data-cat="Veículos e barcos"><img src="png/SmallCanoeItem.png" loading="lazy" alt=""><span class="cnome">Veículos e barcos</span><span class="cqtd">20</span></button>
-<button class="catcard" data-cat="Pesquisa"><img src="png/EngineeringResearchPaperAdvancedItem.png" loading="lazy" alt=""><span class="cnome">Pesquisa</span><span class="cqtd">19</span></button>
-<button class="catcard" data-cat="Governo"><img src="png/TownFoundationItem.png" loading="lazy" alt=""><span class="cnome">Governo</span><span class="cqtd">18</span></button>
-<button class="catcard" data-cat="Moeda"><img src="png/PaperItem.png" loading="lazy" alt=""><span class="cnome">Moeda</span><span class="cqtd">18</span></button>
-<button class="catcard" data-cat="Caça e carcaças"><img src="png/RawMeatItem.png" loading="lazy" alt=""><span class="cnome">Caça e carcaças</span><span class="cqtd">17</span></button>
-<button class="catcard" data-cat="Plantas decorativas"><img src="png/SmallSquareBasaltPotItem.png" loading="lazy" alt=""><span class="cnome">Plantas decorativas</span><span class="cqtd">17</span></button>
-<button class="catcard" data-cat="Madeira"><img src="png/LumberItem.png" loading="lazy" alt=""><span class="cnome">Madeira</span><span class="cqtd">11</span></button>
-<button class="catcard" data-cat="Adubo"><img src="png/CompostItem.png" loading="lazy" alt=""><span class="cnome">Adubo</span><span class="cqtd">10</span></button>
-<button class="catcard" data-cat="Ração"><img src="png/WheatItem.png" loading="lazy" alt=""><span class="cnome">Ração</span><span class="cqtd">10</span></button>
-<button class="catcard" data-cat="Lixo e sucata"><img src="png/WoodScrapItem.png" loading="lazy" alt=""><span class="cnome">Lixo e sucata</span><span class="cqtd">9</span></button>
-<button class="catcard" data-cat="Módulos"><img src="png/AdvancedUpgradeItem.png" loading="lazy" alt=""><span class="cnome">Módulos</span><span class="cqtd">9</span></button>
-<button class="catcard" data-cat="Energia"><img src="png/SteamEngineItem.png" loading="lazy" alt=""><span class="cnome">Energia</span><span class="cqtd">8</span></button>
-<button class="catcard" data-cat="Peixes"><img src="png/SalmonItem.png" loading="lazy" alt=""><span class="cnome">Peixes</span><span class="cqtd">8</span></button>
-<button class="catcard" data-cat="Mochilas"><img src="png/BackpackItem.png" loading="lazy" alt=""><span class="cnome">Mochilas</span><span class="cqtd">2</span></button>
-<button class="catcard" data-cat="Fibra"><img src="png/PlantFibersItem.png" loading="lazy" alt=""><span class="cnome">Fibra</span><span class="cqtd">1</span></button>
-<button class="catcard" data-cat="Lojas"><img src="png/StoreItem.png" loading="lazy" alt=""><span class="cnome">Lojas</span><span class="cqtd">1</span></button></div>
+<div id="cats"><button class="catcard" data-cat="Móveis e decoração"><img src="png/KiteItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Móveis e decoração</span><span class="en">Furniture &amp; decoration</span></span><span class="cqtd">385</span></button>
+<button class="catcard" data-cat="Comida"><img src="png/CampfireStewItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Comida</span><span class="en">Food</span></span><span class="cqtd">187</span></button>
+<button class="catcard" data-cat="Placas e letreiros"><img src="png/LargeStandingSpruceSignItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Placas e letreiros</span><span class="en">Signs &amp; banners</span></span><span class="cqtd">137</span></button>
+<button class="catcard" data-cat="Diversos"><img src="png/MediumMetalShipFrameItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Diversos</span><span class="en">Miscellaneous</span></span><span class="cqtd">128</span></button>
+<button class="catcard" data-cat="Outros objetos"><img src="png/HewnDoorItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Outros objetos</span><span class="en">Other objects</span></span><span class="cqtd">109</span></button>
+<button class="catcard" data-cat="Grupos de item"><img src="png/BlockGroup.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Grupos de item</span><span class="en">Item groups</span></span><span class="cqtd">94</span></button>
+<button class="catcard" data-cat="Roupas"><img src="png/WorkBootsItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Roupas</span><span class="en">Clothing</span></span><span class="cqtd">88</span></button>
+<button class="catcard" data-cat="Melhorias"><img src="png/BasicUpgradeItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Melhorias</span><span class="en">Upgrades</span></span><span class="cqtd">62</span></button>
+<button class="catcard" data-cat="Mesas de fabricação"><img src="png/CarpentryTableItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Mesas de fabricação</span><span class="en">Crafting tables</span></span><span class="cqtd">62</span></button>
+<button class="catcard" data-cat="Ferramentas"><img src="png/IronHammerItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Ferramentas</span><span class="en">Tools</span></span><span class="cqtd">61</span></button>
+<button class="catcard" data-cat="Sementes"><img src="png/CornSeedItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Sementes</span><span class="en">Seeds</span></span><span class="cqtd">59</span></button>
+<button class="catcard" data-cat="Armazenamento"><img src="png/Petite_Double_EtagereItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Armazenamento</span><span class="en">Storage</span></span><span class="cqtd">51</span></button>
+<button class="catcard" data-cat="Peças"><img src="png/IronGearItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Peças</span><span class="en">Parts</span></span><span class="cqtd">45</span></button>
+<button class="catcard" data-cat="Terra e rocha"><img src="png/StoneItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Terra e rocha</span><span class="en">Dirt &amp; rock</span></span><span class="cqtd">42</span></button>
+<button class="catcard" data-cat="Profissões"><img src="png/CarpentrySkillItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Profissões</span><span class="en">Professions</span></span><span class="cqtd">36</span></button>
+<button class="catcard" data-cat="Blocos e construção"><img src="png/MortaredStoneItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Blocos e construção</span><span class="en">Blocks &amp; building</span></span><span class="cqtd">35</span></button>
+<button class="catcard" data-cat="Plantação"><img src="png/CornItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Plantação</span><span class="en">Crops</span></span><span class="cqtd">34</span></button>
+<button class="catcard" data-cat="Combustível"><img src="png/CoalItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Combustível</span><span class="en">Fuel</span></span><span class="cqtd">31</span></button>
+<button class="catcard" data-cat="Veículos e barcos"><img src="png/SmallCanoeItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Veículos e barcos</span><span class="en">Vehicles &amp; boats</span></span><span class="cqtd">20</span></button>
+<button class="catcard" data-cat="Pesquisa"><img src="png/EngineeringResearchPaperAdvancedItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Pesquisa</span><span class="en">Research</span></span><span class="cqtd">19</span></button>
+<button class="catcard" data-cat="Governo"><img src="png/TownFoundationItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Governo</span><span class="en">Government</span></span><span class="cqtd">18</span></button>
+<button class="catcard" data-cat="Moeda"><img src="png/PaperItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Moeda</span><span class="en">Currency</span></span><span class="cqtd">18</span></button>
+<button class="catcard" data-cat="Caça e carcaças"><img src="png/RawMeatItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Caça e carcaças</span><span class="en">Hunting &amp; carcasses</span></span><span class="cqtd">17</span></button>
+<button class="catcard" data-cat="Plantas decorativas"><img src="png/SmallSquareBasaltPotItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Plantas decorativas</span><span class="en">Decorative plants</span></span><span class="cqtd">17</span></button>
+<button class="catcard" data-cat="Madeira"><img src="png/LumberItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Madeira</span><span class="en">Wood</span></span><span class="cqtd">11</span></button>
+<button class="catcard" data-cat="Adubo"><img src="png/CompostItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Adubo</span><span class="en">Fertiliser</span></span><span class="cqtd">10</span></button>
+<button class="catcard" data-cat="Ração"><img src="png/WheatItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Ração</span><span class="en">Animal feed</span></span><span class="cqtd">10</span></button>
+<button class="catcard" data-cat="Lixo e sucata"><img src="png/WoodScrapItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Lixo e sucata</span><span class="en">Garbage &amp; scrap</span></span><span class="cqtd">9</span></button>
+<button class="catcard" data-cat="Módulos"><img src="png/AdvancedUpgradeItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Módulos</span><span class="en">Modules</span></span><span class="cqtd">9</span></button>
+<button class="catcard" data-cat="Energia"><img src="png/SteamEngineItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Energia</span><span class="en">Power</span></span><span class="cqtd">8</span></button>
+<button class="catcard" data-cat="Peixes"><img src="png/SalmonItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Peixes</span><span class="en">Fish</span></span><span class="cqtd">8</span></button>
+<button class="catcard" data-cat="Mochilas"><img src="png/BackpackItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Mochilas</span><span class="en">Backpacks</span></span><span class="cqtd">2</span></button>
+<button class="catcard" data-cat="Fibra"><img src="png/PlantFibersItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Fibra</span><span class="en">Fibre</span></span><span class="cqtd">1</span></button>
+<button class="catcard" data-cat="Lojas"><img src="png/StoreItem.png" loading="lazy" alt=""><span class="cnome"><span class="pt">Lojas</span><span class="en">Shops</span></span><span class="cqtd">1</span></button></div>
 <main id="g"><figure data-n="acornitem" data-solido="0" data-cat="Sementes" data-bbc="" data-real=""><img src="png/AcornItem.png" loading="lazy" alt=""><figcaption>AcornItem</figcaption></figure>
 <figure data-n="acornpowderitem" data-solido="0" data-cat="Comida" data-bbc="" data-real=""><img src="png/AcornPowderItem.png" loading="lazy" alt=""><figcaption>AcornPowderItem</figcaption></figure>
 <figure data-n="adobedooritem" data-solido="0" data-cat="Outros objetos" data-bbc="" data-real=""><img src="png/AdobeDoorItem.png" loading="lazy" alt=""><figcaption>AdobeDoorItem</figcaption></figure>
@@ -2173,6 +2187,7 @@ const BBC={"AdvancedMixologyCoffeeExpertTalentGroup": "AdvancedMixologyCoffeeExp
 // e o CSS esconde um. Aqui ficam so os que sao ATRIBUTO, que o CSS nao alcanca.
 // Por que dois idiomas no mesmo arquivo, e nao um arquivo por lingua: arquivo separado
 // envelhece pela metade -- um dos dois acaba desatualizado sem ninguem notar.
+const CATEN = {"Adubo": "Fertiliser", "Armazenamento": "Storage", "Blocos e construção": "Blocks & building", "Caça e carcaças": "Hunting & carcasses", "Colheita": "Foraging", "Combustível": "Fuel", "Comida": "Food", "Comida crua": "Raw food", "Diversos": "Miscellaneous", "Energia": "Power", "Ferramentas": "Tools", "Fibra": "Fibre", "Governo": "Government", "Grupos de item": "Item groups", "Lixo e sucata": "Garbage & scrap", "Lojas": "Shops", "Madeira": "Wood", "Melhorias": "Upgrades", "Mesas de fabricação": "Crafting tables", "Mochilas": "Backpacks", "Moeda": "Currency", "Módulos": "Modules", "Móveis e decoração": "Furniture & decoration", "Outros objetos": "Other objects", "Peixes": "Fish", "Pesquisa": "Research", "Peças": "Parts", "Placas e letreiros": "Signs & banners", "Plantas decorativas": "Decorative plants", "Plantação": "Crops", "Profissões": "Professions", "Ração": "Animal feed", "Roupas": "Clothing", "Sementes": "Seeds", "Terra e rocha": "Dirt & rock", "Veículos e barcos": "Vehicles & boats"};
 const ATTR = {
   txt: ["Ex.: Carpintaria\nLenhador", "e.g. Carpentry\nLumberjack"],
   f:   ["filtrar pelo nome (ex.: Store, Market, Sign, Log, Bar)...",
@@ -2191,6 +2206,7 @@ function lingua(x){
   document.documentElement.lang = en ? "en" : "pt-BR";
   try { localStorage.setItem("bbc-lingua", x); } catch(e){}
   if (typeof mostraIcones === "function") mostraIcones();
+  if (typeof filtra === "function") filtra();
 }
 let catAberta=null;
 // Nome que vai para a placa: o do nosso mod quando existir e a caixa estiver ligada.
@@ -2204,14 +2220,17 @@ function filtra(){const q=f.value.toLowerCase().trim();
   cats.style.display = vendoCats ? 'grid' : 'none';
   g.style.display    = vendoCats ? 'none' : 'grid';
   volta.style.display= (modo && !q && catAberta) ? 'flex' : 'none';
-  $('catAtual').textContent = catAberta || '';
-  if(vendoCats){ n.textContent = cats.children.length+' categorias'; return; }
+  $('catAtual').textContent = catAberta
+      ? (document.body.classList.contains('en') ? (CATEN[catAberta] || catAberta) : catAberta)
+      : '';
+  if(vendoCats){ n.textContent = cats.children.length
+      + (document.body.classList.contains('en') ? ' categories' : ' categorias'); return; }
   let c=0;
   for(const el of figs){
     const ok=(!q||el.dataset.n.includes(q))
            &&(!modo||q||!catAberta||el.dataset.cat===catAberta);
     el.style.display=ok?'':'none'; if(ok)c++;}
-  n.textContent=c+' de '+figs.length;}
+  n.textContent=c+(document.body.classList.contains('en')?' of ':' de ')+figs.length;}
 $('cats').onclick=e=>{const b=e.target.closest('.catcard'); if(!b)return;
   catAberta=b.dataset.cat; filtra(); window.scrollTo({top:document.querySelector('header').offsetTop,behavior:'smooth'});};
 $('btVolta').onclick=()=>{catAberta=null; filtra();};
