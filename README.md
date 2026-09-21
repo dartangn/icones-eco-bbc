@@ -1,6 +1,12 @@
 # Ícones do Eco para placas — BBC-Brasil
 
-Galeria estática (GitHub Pages) com **1824 ícones** e um montador de placa.
+Galeria estática (GitHub Pages) com **1908 ícones** e um montador de placa.
+
+| | de onde vem | |
+|---|---|---|
+| **1581** | atlas de ícones do **cliente** | itens do jogo base |
+| **219** | bundle de cada **mod** instalado | levam a etiqueta <kbd>mod</kbd> |
+| **108** | ninguém entrega | marcados com <kbd>!</kbd>: **copiar a tag dá engrenagem** |
 Clique num ícone para escolhê-lo; o comando sai pronto para colar no texto da placa (tecla **E**).
 
 Também servida dentro do painel do servidor, em `/placas/`.
@@ -21,10 +27,17 @@ Também servida dentro do painel do servidor, em `/placas/`.
 | Etiqueta | Significa |
 |---|---|
 | <kbd>FUNDO</kbd> | a arte não tem recorte: **sai com um quadrado na placa mesmo com `type="nobg"`**, e não há tag que conserte. São 290 — 64 do jogo base (lixo, sucata, filtros) e o resto de mods |
-| <kbd>BBC</kbd> | temos versão recortada no nosso mod. O comando sai com o nome `...BBC` e **só funciona com o mod instalado no servidor** |
-| <kbd>?</kbd> | o nome **não corresponde a nenhuma classe do jogo** (quase todos `*Group`, agrupamentos do GoodPrice): pode não aparecer. Não está provado que falha — está provado que não é classe |
+| <kbd>mod</kbd> | o ícone vem do bundle de um **mod**, e o tooltip diz de qual. Se aquele mod sair do servidor, **a placa que usa este ícone passa a mostrar engrenagem** |
+| <kbd>!</kbd> | **ninguém entrega este ícone** — nem o cliente, nem mod instalado. Copiar a tag mostra **engrenagem** na placa. São 108, e 94 terminam em `Group`: são agrupamentos internos do GoodPrice, não itens |
 
-*A regra aqui é avisar, não esconder.*
+*A regra aqui é avisar, não esconder.* O ícone marcado com <kbd>!</kbd> aparece **apagado**, e no
+montador a linha dele fica vermelha com o aviso *"sai engrenagem"* — onde a pessoa está montando,
+não numa legenda no fim da página.
+
+**O critério do <kbd>!</kbd> mudou em 21/09/2026**, e essa é a correção que importa. Antes ele
+perguntava *"este nome é classe do jogo?"*, e isso deixava passar os 94 `*Group` — justamente os
+que quebraram uma placa em campo. Agora pergunta **"o cliente entrega este ícone?"**, cruzando cada
+nome contra o atlas do cliente e os bundles dos mods instalados.
 
 ## Como as categorias são montadas
 
@@ -63,11 +76,18 @@ Três coisas que o comando **não** controla, todas testadas em placa de verdade
 ## Como a galeria é gerada
 
 ```
-python categorizar.py      # categorias, pelos componentes dos objetos
-python nomes-reais.py      # nome que a tag aceita, contra as classes do servidor
-python classificar-alfa.py # quais ícones saem com fundo
-python extrair-icones.py   # monta o index.html
+python categorizar.py          # categorias, pelos componentes dos objetos
+python nomes-reais.py          # nome que a tag aceita, contra as classes do servidor
+python classificar-alfa.py     # quais ícones saem com fundo
+python extrair-icones-de-mod.py  # extrai a arte de dentro do bundle de cada mod
+python gerar-procedencia.py    # cada nome vale? cruza contra o atlas do cliente e os mods
+python categorizar-novos.py    # categoria dos que vieram dos bundles
+python extrair-icones.py       # monta o index.html
 ```
+
+Os dois do meio existem porque a galeria era montada **só** dos PNG que o GoodPrice embute — e o
+GoodPrice não é a fonte que o cliente usa para desenhar ícone. Ela oferecia 108 nomes que não
+funcionam e escondia 84 que funcionam.
 
 Os PNG foram extraídos das imagens que o mod **GoodPrice** embute, e os marcados <kbd>BBC</kbd> são
 versões recortadas por nós. É material do jogo e de mods de terceiros, publicado aqui só para servir
